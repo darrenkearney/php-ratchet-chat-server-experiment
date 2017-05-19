@@ -1,0 +1,11 @@
+<script type="text/javascript" rel="JavaScript">
+/* Client side connection to websocket chat server. Run in browser.*/
+var conn = new WebSocket('ws://localhost:8080');
+conn.onopen = function(e) {
+        console.log("Connection established!");
+};
+
+conn.onmessage = function(e) {
+        console.log(e.data);
+};
+</script>
