@@ -1,11 +1,109 @@
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+<div id="chat_log" style="background: #000; width: 300px; height:400px; border:green 2px solid; color: #00DD00;">
+[Chat log]
+
+</div>
+<input type="text" id="message" />
+
+<button type="button" id="send_btn">Send</button>
+
+<div id="info" style="height:28px;"></div>
+
 <script type="text/javascript" rel="JavaScript">
+
+var chat_log = [] /* setting up an array to store message objects */
+
 /* Client side connection to websocket chat server. Run in browser.*/
-var conn = new WebSocket('ws://localhost:8080');
+var conn = new WebSocket('ws://localhost:8080');;
+
 conn.onopen = function(e) {
-        console.log("Connection established!");
+    console.log("Connection established!");
 };
 
 conn.onmessage = function(e) {
-        console.log(e.data);
+    msg = JSON.parse(e.data);
+    console.log(e.data, e.data.user, e.data.message);
+
+    if (msg.type === 'message'){ 
+        /* Append message to log */
+        chat_log.push( msg );
+        update_chat( msg );
+    }
+    else if (msg.type === 'status'){
+        $('#info').text( msg.username + " is currently " + msg.data + "...");
+        $('#info').show();
+    }
+
 };
 </script>
+<script type="text/javascript" rel="JavaScript">
+
+function ask_for_name( question ){
+
+    while ( true ){
+        username = prompt(question)
+
+        if (username.length <= 2) {
+            alert("Username too short. Must be greater than 2 characters.");
+        }else if (username.length > 32 ){
+            alert("Username's must not exceed 32 characters");
+        }
+        else{
+            return username;
+        }
+    }
+}
+
+var username = ask_for_name("Enter a user name: ")
+
+
+$('#send_btn').click( function() {
+    if ( $('#message').val() == "") {
+        return
+    }
+    /* Our message data as JSON object */
+    var msg = {
+        'type': 'message',
+        'username' : username,
+        'data': $('#message').val()
+    };
+
+    console.log("Sending message: " + JSON.stringify( msg ) );
+    conn.send( JSON.stringify( msg ) ); /* Append message to local log */
+    chat_log.push( msg );
+    update_chat( msg );
+    /* Reset message box */
+    $('#message').val("");
+    
+
+});
+
+$('#message').keydown( function(e){
+    var msg = {
+        'type': 'status',
+        'username': username,
+        'data': 'typing'
+    }
+    conn.send(JSON.stringify(msg)); 
+});
+
+function update_chat(msg){
+    $('#chat_log').append( "<div data-id=\"\">"+msg.username+ ": "+ msg.data+"</div>"); 
+}
+
+var nIntervalID;
+nIntervId = setInterval(clearInfo, 4000);
+function clearInfo(){
+    $('#info').fadeOut('slow', function(){
+        $( this ).text("");
+    });    
+
+}
+
+</script>
+</body>
+</html>
